@@ -62,18 +62,18 @@ namespace TextToDb
         //convert header report from list to string to pass into stored procedure.
         private static void CreateHeaderReport(List<string>headerReport)
         {
-            string s = "'";
+            string s = String.Empty;
             foreach(string header in headerReport)
             {
                 string[] parts = header.Split('=');
                 if(parts.Length == 2 )
                 {
-                    s = s + parts[1]+"'"+",";
+                    s = s +"'" +parts[1]+"'"+",";
                 }
 
             }
-
-
+            
+            InsertData(s.TrimEnd(','), "sp_insertMetaData");
             
         }
 
@@ -118,7 +118,7 @@ namespace TextToDb
      
             try
             {
-               string connectionString = @"Your data source path";
+               string connectionString = @"Data Source=localhost;Initial Catalog=TextToDB;Integrated Security=True";
                SqlConnection conn = new SqlConnection(connectionString);
 
                 SqlCommand cmd = new SqlCommand(procedure, conn);
@@ -130,7 +130,7 @@ namespace TextToDb
                 cmd.ExecuteNonQuery();
                 conn.Close();
             }
-            catch (Exception exxp)
+            catch (SqlException exxp)
             {
                 Console.WriteLine(exxp.Message);
             }
