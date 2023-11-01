@@ -14,6 +14,7 @@ namespace TextToDb
     {
         static void Main(string[] args)
         {
+            //validate target report only once
             string fileName = @"C:\Users\soute\Documents\Fake_Output_Data.txt";
             if (!File.Exists(fileName)) {
                 Console.WriteLine("No File Found");
@@ -25,10 +26,11 @@ namespace TextToDb
             }
                     
         }
-
+        //Reads the whole report at once, therefore we only call StreamReader once instead of multiple times. 
         private static void parseReport(string file)
         {
             List<string> reportStorageList = new List<string>();
+            string resultsHeader = "RESULT_DATA";
             try
             {
                 using(StreamReader sr = new StreamReader(file)) 
@@ -40,6 +42,16 @@ namespace TextToDb
                     }
                     sr.Close();
                 }
+                int resultsHeaderIndx = reportStorageList.FindIndex(i => i.Contains(resultsHeader));
+                if (resultsHeaderIndx >= 0)
+                {
+                    List<string> headerReport = reportStorageList.GetRange(1, resultsHeaderIndx - 1);
+                    List<string> resultsReport = reportStorageList.GetRange(resultsHeaderIndx + 1, reportStorageList.Count - resultsHeaderIndx - 1);
+                    headerReport = headerReport.Distinct().ToList();
+                    CreateHeaderReport(headerReport);
+                }
+                    
+                   
             }
             catch (Exception e) 
             {
@@ -47,42 +59,22 @@ namespace TextToDb
             }
             
         }
-        private static void GetHeaderData(string fileName)
+        //convert header report from list to string to pass into stored procedure.
+        private static void CreateHeaderReport(List<string>headerReport)
         {
-            if (!File.Exists(fileName))
+            string s = "'";
+            foreach(string header in headerReport)
             {
-                Console.WriteLine("does not exist");
-            }
-
-            List<string> fieldNames = new List<string>();
-            string lst1 = string.Empty;
-            string s = string.Empty;
-
-            // METADATA HEADER 
-            using (StreamReader sr = File.OpenText(fileName))
-            {
-                while ((s = sr.ReadLine()) != null)
+                string[] parts = header.Split('=');
+                if(parts.Length == 2 )
                 {
-                    if (s.Contains("="))
-                    {
-                        string[] vals = s.Split('=');
-
-                        if (!fieldNames.Contains(vals[0]))
-                        {
-                            fieldNames.Add(vals[0]);
-                            if (vals.Length > 2)
-                            {
-                                lst1 = lst1 + vals[1] + "'" + ",";
-                            }
-                        }
-                    }
-                    else if (s == "RESULT_DATA")
-                    {
-                        //InsertData(lst1.TrimEnd(','));
-                        return;
-                    }
+                    s = s + parts[1]+"'"+",";
                 }
+
             }
+
+
+            
         }
 
         private static void ResultsReport(string filename)
@@ -120,6 +112,7 @@ namespace TextToDb
 
         }
         //"sp_insertMetaData"
+        //one single method to handle DB operations instead of two redundant methods. Also declared variables as they were being used.
         private static void InsertData(string lst1,string procedure)
         {
      
