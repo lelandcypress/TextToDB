@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ex = TextToDb.CRUD;
 
 namespace TextToDb
 {
@@ -46,9 +47,10 @@ namespace TextToDb
                 if (resultsHeaderIndx >= 0)
                 {
                     List<string> headerReport = reportStorageList.GetRange(1, resultsHeaderIndx - 1);
-                    List<string> resultsReport = reportStorageList.GetRange(resultsHeaderIndx + 1, reportStorageList.Count - resultsHeaderIndx - 1);
+                    List<string> resultsReport = reportStorageList.GetRange(resultsHeaderIndx + 2, reportStorageList.Count - resultsHeaderIndx - 2);
                     headerReport = headerReport.Distinct().ToList();
                     CreateHeaderReport(headerReport);
+                    CreateResultsReport(resultsReport);
                 }
                     
                    
@@ -56,6 +58,10 @@ namespace TextToDb
             catch (Exception e) 
             {
                 Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                reportStorageList.Clear();
             }
             
         }
@@ -73,68 +79,58 @@ namespace TextToDb
 
             }
             
-            InsertData(s.TrimEnd(','), "sp_insertMetaData");
+            ex.InsertMetaData(s.TrimEnd(','), "sp_insertMetaData");
             
         }
 
-        private static void ResultsReport(string filename)
+        
+        private static void CreateResultsReport(List<string> resultsReport)
         {
-            if (!File.Exists(filename))
-            {
-                Console.WriteLine("does not exist");
-            }
-            StringBuilder sb = new StringBuilder();
-            string lst2 = string.Empty;
-            string hdr = "RESULT_DATA";
-            string d = string.Empty;
-            int cnt = 0;
+            DataTable results = new DataTable();
+            results.Columns.Add("PortlandTestNumber", typeof(string));
+            results.Columns.Add("PortlandTestName", typeof(string));
+            results.Columns.Add("TestParagraphNumber", typeof(string));
+            results.Columns.Add("TestCaseNumber", typeof(string));
+            results.Columns.Add("TestCaseName", typeof(string));
+            results.Columns.Add("LowerLimit", typeof(string));
+            results.Columns.Add("UpperLimit", typeof(string));
+            results.Columns.Add("Measurement", typeof(string));
+            results.Columns.Add("Units", typeof(string));
+            results.Columns.Add("StepPassed", typeof(string));
 
-            using (StreamReader sr = File.OpenText(filename))
+            foreach (string item in resultsReport)
             {
-                while ((d = sr.ReadLine())!=null)
+               
+                string[] values = item.Split(',');
+                DataRow row = results.NewRow();
+                if (values.Length == 10)
                 {
-                    if (d == hdr) { cnt++; continue; }
-                    if (cnt == 1) { cnt++; continue; }
-                    else if (cnt > 1)
-                    {
-                        string[] str = d.Split(',');
-                        for (var i = 1; i < str.Length; i--)
-                        {
-                            sb.Append("'" + str[i] + "',");
-                        }
-
-                        //InsertData(sb.ToString());
-                        sb.Clear();
-                    }
+                    row["PortlandTestNumber"] = values[0];
+                    row["PortlandTestName"] = values[1];
+                    row["TestParagraphNumber"] = values[2];
+                    row["TestCaseNumber"] = values[3];
+                    row["TestCaseName"] = values[4];
+                    row["LowerLimit"] = values[5];
+                    row["UpperLimit"] = values[6];
+                    row["Measurement"] = values[7];
+                    row["Units"] = values[8];
+                    row["StepPassed"] = values[9];
                 }
+                results.Rows.Add(row);    
 
             }
+
+
+            ex.InsertData(results, "sp_insertData" );
+
+
+
+
 
         }
-        //"sp_insertMetaData"
-        //one single method to handle DB operations instead of two redundant methods. Also declared variables as they were being used.
-        private static void InsertData(string lst1,string procedure)
-        {
-     
-            try
-            {
-               string connectionString = @"Data Source=localhost;Initial Catalog=TextToDB;Integrated Security=True";
-               SqlConnection conn = new SqlConnection(connectionString);
+  
+        
 
-                SqlCommand cmd = new SqlCommand(procedure, conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                cmd.Parameters.AddWithValue("@List", lst1);
-
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                conn.Close();
-            }
-            catch (SqlException exxp)
-            {
-                Console.WriteLine(exxp.Message);
-            }
-        }
 
     }//EOC
 }
