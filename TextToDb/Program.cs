@@ -118,8 +118,8 @@ namespace TextToDb
                     row["Units"] = values[8];
                     row["StepPassed"] = values[9];
                     row["UnitSN"] = headerindx;
+                    results.Rows.Add(row);    
                 }
-                results.Rows.Add(row);    
 
             }
 
