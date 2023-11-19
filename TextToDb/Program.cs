@@ -49,8 +49,9 @@ namespace TextToDb
                     List<string> headerReport = reportStorageList.GetRange(1, resultsHeaderIndx - 1);
                     List<string> resultsReport = reportStorageList.GetRange(resultsHeaderIndx + 2, reportStorageList.Count - resultsHeaderIndx - 2);
                     headerReport = headerReport.Distinct().ToList();
+                    string[] keypair = headerReport[6].Split('=');
                     CreateHeaderReport(headerReport);
-                    CreateResultsReport(resultsReport);
+                    CreateResultsReport(resultsReport, keypair[1]);
                 }
                     
                    
@@ -84,7 +85,7 @@ namespace TextToDb
         }
 
         
-        private static void CreateResultsReport(List<string> resultsReport)
+        private static void CreateResultsReport(List<string> resultsReport,string headerindx)
         {
             DataTable results = new DataTable();
             results.Columns.Add("PortlandTestNumber", typeof(string));
@@ -97,6 +98,7 @@ namespace TextToDb
             results.Columns.Add("Measurement", typeof(string));
             results.Columns.Add("Units", typeof(string));
             results.Columns.Add("StepPassed", typeof(string));
+            results.Columns.Add("UnitSN");
 
             foreach (string item in resultsReport)
             {
@@ -115,6 +117,7 @@ namespace TextToDb
                     row["Measurement"] = values[7];
                     row["Units"] = values[8];
                     row["StepPassed"] = values[9];
+                    row["UnitSN"] = headerindx;
                 }
                 results.Rows.Add(row);    
 
